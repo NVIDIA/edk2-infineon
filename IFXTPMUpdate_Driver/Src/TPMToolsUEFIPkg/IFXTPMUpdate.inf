@@ -1,0 +1,164 @@
+##
+#	@brief		EDK II Module Information file for Infineon TPM Firmware Update Driver.
+#	@details	The IFXTPMUpdate driver implements the TPM Firmware Update functionality.
+#	@file		IFXTPMUpdate.inf
+#
+#	Copyright 2014 - 2022 Infineon Technologies AG ( www.infineon.com )
+#
+#	Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+#	1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+#	2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+#	3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+#	THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+##
+
+[Defines]
+	INF_VERSION						= 0x00010019
+	BASE_NAME						= IFXTPMUpdate
+	FILE_GUID						= 6EAFECE5-E506-418E-AA4D-3F8CCFC76D62
+	MODULE_TYPE						= DXE_DRIVER
+	VERSION_STRING					= 02.01.3610.00
+	ENTRY_POINT						= IFXTPMUpdateEntryPoint
+	UNLOAD_IMAGE					= DefaultUnload
+
+#
+# The following information is for reference only and not required by the build tools.
+#
+#	VALID_ARCHITECTURES				= X64
+#
+
+[Sources]
+	Common/Crypt/UEFI/Crypt.c
+	Common/Crypt/Crypt.h
+
+	Common/MicroTss/Tpm_1_2/TPM_FieldUpgradeInfoRequest.c
+	Common/MicroTss/Tpm_1_2/TPM_FieldUpgradeInfoRequest.h
+	Common/MicroTss/Tpm_1_2/TPM_FieldUpgradeInfoRequest2.c
+	Common/MicroTss/Tpm_1_2/TPM_FieldUpgradeInfoRequest2.h
+	Common/MicroTss/Tpm_1_2/TPM_FieldUpgradeStart.c
+	Common/MicroTss/Tpm_1_2/TPM_FieldUpgradeStart.h
+	Common/MicroTss/Tpm_1_2/TPM_FlushSpecific.c
+	Common/MicroTss/Tpm_1_2/TPM_FlushSpecific.h
+	Common/MicroTss/Tpm_1_2/TPM_GetCapability.c
+	Common/MicroTss/Tpm_1_2/TPM_GetCapability.h
+	Common/MicroTss/Tpm_1_2/TPM_GetTestResult.c
+	Common/MicroTss/Tpm_1_2/TPM_GetTestResult.h
+	Common/MicroTss/Tpm_1_2/TPM_Marshal.c
+	Common/MicroTss/Tpm_1_2/TPM_Marshal.h
+	Common/MicroTss/Tpm_1_2/TPM_OIAP.c
+	Common/MicroTss/Tpm_1_2/TPM_OIAP.h
+	Common/MicroTss/Tpm_1_2/TPM_OSAP.c
+	Common/MicroTss/Tpm_1_2/TPM_OSAP.h
+	Common/MicroTss/Tpm_1_2/TPM_OwnerReadInternalPub.c
+	Common/MicroTss/Tpm_1_2/TPM_OwnerReadInternalPub.h
+	Common/MicroTss/Tpm_1_2/TPM_Startup.c
+	Common/MicroTss/Tpm_1_2/TPM_Startup.h
+	Common/MicroTss/Tpm_1_2/TPM_Types.h
+	Common/MicroTss/Tpm_1_2/TPM_FieldUpgradeComplete.c
+	Common/MicroTss/Tpm_1_2/TPM_FieldUpgradeComplete.h
+	Common/MicroTss/Tpm_1_2/TPM_FieldUpgradeUpdate.c
+	Common/MicroTss/Tpm_1_2/TPM_FieldUpgradeUpdate.h
+	Common/MicroTss/Tpm_2_0/TPM2_FieldUpgradeAbandonVendor.c
+	Common/MicroTss/Tpm_2_0/TPM2_FieldUpgradeAbandonVendor.h
+	Common/MicroTss/Tpm_2_0/TPM2_FieldUpgradeDataVendor.c
+	Common/MicroTss/Tpm_2_0/TPM2_FieldUpgradeDataVendor.h
+	Common/MicroTss/Tpm_2_0/TPM2_FieldUpgradeFinalizeVendor.c
+	Common/MicroTss/Tpm_2_0/TPM2_FieldUpgradeFinalizeVendor.h
+	Common/MicroTss/Tpm_2_0/TPM2_FieldUpgradeManifestVendor.c
+	Common/MicroTss/Tpm_2_0/TPM2_FieldUpgradeManifestVendor.h
+	Common/MicroTss/Tpm_2_0/TPM2_FieldUpgradeMarshal.c
+	Common/MicroTss/Tpm_2_0/TPM2_FieldUpgradeMarshal.h
+	Common/MicroTss/Tpm_2_0/TPM2_FieldUpgradeStartVendor.c
+	Common/MicroTss/Tpm_2_0/TPM2_FieldUpgradeStartVendor.h
+	Common/MicroTss/Tpm_2_0/TPM2_FieldUpgradeTypes.h
+	Common/MicroTss/Tpm_2_0/TPM2_FlushContext.c
+	Common/MicroTss/Tpm_2_0/TPM2_FlushContext.h
+	Common/MicroTss/Tpm_2_0/TPM2_GetCapability.c
+	Common/MicroTss/Tpm_2_0/TPM2_GetCapability.h
+	Common/MicroTss/Tpm_2_0/TPM2_GetTestResult.c
+	Common/MicroTss/Tpm_2_0/TPM2_GetTestResult.h
+	Common/MicroTss/Tpm_2_0/TPM2_HierarchyChangeAuth.c
+	Common/MicroTss/Tpm_2_0/TPM2_HierarchyChangeAuth.h
+	Common/MicroTss/Tpm_2_0/TPM2_Marshal.c
+	Common/MicroTss/Tpm_2_0/TPM2_Marshal.h
+	Common/MicroTss/Tpm_2_0/TPM2_PolicyCommandCode.c
+	Common/MicroTss/Tpm_2_0/TPM2_PolicyCommandCode.h
+	Common/MicroTss/Tpm_2_0/TPM2_PolicySecret.c
+	Common/MicroTss/Tpm_2_0/TPM2_PolicySecret.h
+	Common/MicroTss/Tpm_2_0/TPM2_SetPrimaryPolicy.c
+	Common/MicroTss/Tpm_2_0/TPM2_SetPrimaryPolicy.h
+	Common/MicroTss/Tpm_2_0/TPM2_StartAuthSession.c
+	Common/MicroTss/Tpm_2_0/TPM2_StartAuthSession.h
+	Common/MicroTss/Tpm_2_0/TPM2_Startup.c
+	Common/MicroTss/Tpm_2_0/TPM2_Startup.h
+	Common/MicroTss/Tpm_2_0/TPM2_Types.h
+	Common/MicroTss/Tpm_2_0/TPM2_VendorMarshal.c
+	Common/MicroTss/Tpm_2_0/TPM2_VendorMarshal.h
+	Common/MicroTss/Tpm_2_0/TPM2_VendorTypes.h
+	Common/MicroTss/Tpm_2_0/implementations.h
+	Common/MicroTss/Tpm_2_0/swap.h
+
+	Common/Platform/UEFI/Platform.c
+	Common/Platform/Platform.h
+
+	Common/TpmDeviceAccess/UEFI/DeviceAccess.c
+	Common/TpmDeviceAccess/DeviceAccess.h
+	Common/TpmDeviceAccess/TPM_TIS.c
+	Common/TpmDeviceAccess/TPM_TIS.h
+	Common/TpmDeviceAccess/UEFI/TpmIO.c
+
+	Common/DeviceManagement.c
+	Common/DeviceManagement.h
+	Common/Error.h
+	Common/ErrorCodes.h
+	Common/FirmwareImage.c
+	Common/FirmwareImage.h
+	Common/FirmwareUpdate.c
+	Common/FirmwareUpdate.h
+	Common/Globals.h
+	Common/Globals_UEFI.h
+	Common/Logging.h
+	Common/PropertyStorage.c
+	Common/PropertyStorage.h
+	Common/TpmIO.h
+	Common/Utility.c
+	Common/Utility.h
+
+	IFXTPMUpdate/UEFI/IFXTPMUpdate.h
+	IFXTPMUpdate/AdapterInformation.c
+	IFXTPMUpdate/AdapterInformation.h
+	IFXTPMUpdate/ComponentName.c
+	IFXTPMUpdate/ComponentName.h
+	IFXTPMUpdate/Error.c
+	IFXTPMUpdate/FirmwareManagement.c
+	IFXTPMUpdate/FirmwareManagement.h
+	IFXTPMUpdate/IFXTPMUpdate.c
+	IFXTPMUpdate/IFXTPMUpdateInit.c
+	IFXTPMUpdate/IFXTPMUpdateApp.h
+	IFXTPMUpdate/Logging.c
+	IFXTPMUpdate/PropertyDefines.h
+	IFXTPMUpdate/StdInclude.h
+
+[Packages]
+	CryptoPkg/CryptoPkg.dec
+	MdePkg/MdePkg.dec
+
+[LibraryClasses]
+	# EDK II libraries
+	BaseCryptLib
+	BaseMemoryLib
+	DebugLib
+	IntrinsicLib
+	IoLib
+	MemoryAllocationLib
+	OpensslLib
+	UefiBootServicesTableLib
+	UefiDriverEntryPoint
+	UefiLib
+
+[Protocols]
+	gEfiAdapterInformationProtocolGuid			## PRODUCES
+	gEfiFirmwareManagementProtocolGuid			## PRODUCES
+
+[Depex]
+	TRUE
