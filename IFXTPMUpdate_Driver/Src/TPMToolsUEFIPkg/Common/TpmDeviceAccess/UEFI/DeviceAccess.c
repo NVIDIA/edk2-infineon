@@ -4,6 +4,7 @@
  *  @file       UEFI\DeviceAccess.c
  *
  *  Copyright 2014 - 2022 Infineon Technologies AG ( www.infineon.com )
+ *  SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
  *  1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
@@ -15,6 +16,38 @@
 #include "DeviceAccess.h"
 #include "Logging.h"
 #include <Library/IoLib.h>                      // Because of TPM-LPC
+
+#include <Protocol/Tpm2.h>
+
+#define TIS_INVALID_VALUE  0xFF
+
+STATIC NVIDIA_TPM2_PROTOCOL  *mTpm2 = NULL;
+
+/**
+  Get TPM2 protocol
+
+  @retval EFI_SUCCESS  The operation completed successfully.
+**/
+STATIC
+EFI_STATUS
+GetNvidiaTpm2Protocol (
+  VOID
+  )
+{
+  EFI_STATUS  Status;
+
+  if (mTpm2 != NULL) {
+    return EFI_SUCCESS;
+  }
+
+  Status = gBS->LocateProtocol (&gNVIDIATpm2ProtocolGuid, NULL, (VOID **)&mTpm2);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a: Fail to locate TPM protocol.\n", __FUNCTION__));
+    return EFI_DEVICE_ERROR;
+  }
+
+  return EFI_SUCCESS;
+}
 
 /**
  *  @brief      Initialize the device access
@@ -30,7 +63,7 @@ unsigned int
 DeviceAccess_Initialize(
     _In_    BYTE    PbLocality)
 {
-    return RC_SUCCESS;
+  return RC_SUCCESS;
 }
 
 /**
@@ -46,7 +79,7 @@ unsigned int
 DeviceAccess_Uninitialize(
     _In_    BYTE    PbLocality)
 {
-    return RC_SUCCESS;
+  return RC_SUCCESS;
 }
 
 /**
@@ -61,12 +94,23 @@ BYTE
 DeviceAccess_ReadByte(
     _In_    unsigned int PunMemoryAddress)
 {
-    BYTE bData = 0;
+  EFI_STATUS  Status;
+  BYTE        bData = 0;
 
-    bData = MmioRead8(PunMemoryAddress);
-    LOGGING_WRITE_LEVEL4_FMT(L"DeviceAccess_ReadByte:   Address: %0.8X :         %0.2X", PunMemoryAddress, bData);
+  Status = GetNvidiaTpm2Protocol ();
+  if (EFI_ERROR (Status)) {
+    return TIS_INVALID_VALUE;
+  }
 
-    return bData;
+  PunMemoryAddress &= 0xFFFF;
+  Status            = mTpm2->Transfer (mTpm2, TRUE, PunMemoryAddress, &bData, sizeof (bData));
+  if (EFI_ERROR (Status)) {
+    bData = TIS_INVALID_VALUE;
+  }
+
+  LOGGING_WRITE_LEVEL4_FMT (L"DeviceAccess_ReadByte:   Address: %0.8X :         %0.2X", PunMemoryAddress, bData);
+
+  return bData;
 }
 
 /**
@@ -81,13 +125,16 @@ DeviceAccess_WriteByte(
     _In_    unsigned int    PunMemoryAddress,
     _In_    BYTE            PbData)
 {
-    UINT8 bDataWritten = 0;
+  EFI_STATUS  Status;
 
-    LOGGING_WRITE_LEVEL4_FMT(L"DeviceAccess_WriteByte:  Address: %0.8X = %0.2X", PunMemoryAddress, PbData);
-    bDataWritten = MmioWrite8(PunMemoryAddress, PbData);
+  Status = GetNvidiaTpm2Protocol ();
+  if (EFI_ERROR (Status)) {
+    return;
+  }
 
-    if (bDataWritten != PbData)
-        LOGGING_WRITE_LEVEL1_FMT(L"\n\tError: DeviceAccess_WriteByte: MemAddress %x is invalid !!!", PunMemoryAddress);
+  PunMemoryAddress &= 0xFFFF;
+  LOGGING_WRITE_LEVEL4_FMT (L"DeviceAccess_WriteByte:  Address: %0.8X = %0.2X", PunMemoryAddress, PbData);
+  Status = mTpm2->Transfer (mTpm2, FALSE, PunMemoryAddress, &PbData, sizeof (PbData));
 }
 
 /**
@@ -102,26 +149,35 @@ unsigned short
 DeviceAccess_ReadWord(
     _In_    unsigned int    PunMemoryAddress)
 {
-    unsigned short usData = 0;
+  EFI_STATUS      Status;
+  unsigned short  usData = 0;
 
-    // 16 bit read access must be aligned on a 16-bit boundary
-    // because of that the access is split up into two 8 bit read's if necessary
-    // This restriction is also true for a 16 bit write, and a 32 bit read/write access,
-    // (32-bit aligned) but for the LPC-TPM there is so far no use case for this access
-    if ((PunMemoryAddress & 1) == 1)
-    {
-        unsigned short usTemp = 0;
-        LOGGING_WRITE_LEVEL4_FMT(L"DeviceAccess_ReadWord:   Address: %0.8X is not word aligned so read it in two byte operations", PunMemoryAddress);
-        usData = MmioRead8(PunMemoryAddress);
-        usTemp = MmioRead8(PunMemoryAddress + 1);
-        usData |= (usTemp << 8);
+  // 16 bit read access must be aligned on a 16-bit boundary
+  // because of that the access is split up into two 8 bit read's if necessary
+  // This restriction is also true for a 16 bit write, and a 32 bit read/write access,
+  // (32-bit aligned) but for the LPC-TPM there is so far no use case for this access
+  if ((PunMemoryAddress & 1) == 1) {
+    unsigned short  usTemp = 0;
+    LOGGING_WRITE_LEVEL4_FMT (L"DeviceAccess_ReadWord:   Address: %0.8X is not word aligned so read it in two byte operations", PunMemoryAddress);
+    usData  = DeviceAccess_ReadByte (PunMemoryAddress);
+    usTemp  = DeviceAccess_ReadByte (PunMemoryAddress + 1);
+    usData |= (usTemp << 8);
+  } else {
+    Status = GetNvidiaTpm2Protocol ();
+    if (EFI_ERROR (Status)) {
+      return 0xFFFF;
     }
-    else
-        usData = MmioRead16(PunMemoryAddress);
 
-    LOGGING_WRITE_LEVEL4_FMT(L"DeviceAccess_ReadWord:   Address: %0.8X :         %0.4X", PunMemoryAddress, usData);
+    PunMemoryAddress &= 0xFFFF;
+    Status            = mTpm2->Transfer (mTpm2, TRUE, PunMemoryAddress, (UINT8 *)&usData, sizeof (usData));
+    if (EFI_ERROR (Status)) {
+      usData = 0xFFFF;
+    }
+  }
 
-    return usData;
+  LOGGING_WRITE_LEVEL4_FMT (L"DeviceAccess_ReadWord:   Address: %0.8X :         %0.4X", PunMemoryAddress, usData);
+
+  return usData;
 }
 
 /**
@@ -136,11 +192,14 @@ DeviceAccess_WriteWord(
     _In_    unsigned int    PunMemoryAddress,
     _In_    unsigned short  PusData)
 {
-    UINT16 usDataWritten = 0;
+  EFI_STATUS  Status;
 
-    LOGGING_WRITE_LEVEL4_FMT(L"DeviceAccess_WriteWord:  Address: %0.8X = %0.4X", PunMemoryAddress, PusData);
-    usDataWritten = MmioWrite16(PunMemoryAddress, PusData);
+  Status = GetNvidiaTpm2Protocol ();
+  if (EFI_ERROR (Status)) {
+    return;
+  }
 
-    if (usDataWritten != PusData)
-        LOGGING_WRITE_LEVEL1_FMT(L"\n\tError: DeviceAccess_WriteWord: MemAddress %x is invalid !!!", PunMemoryAddress);
+  PunMemoryAddress &= 0xFFFF;
+  LOGGING_WRITE_LEVEL4_FMT (L"DeviceAccess_WriteWord:  Address: %0.8X = %0.4X", PunMemoryAddress, PusData);
+  Status = mTpm2->Transfer (mTpm2, FALSE, PunMemoryAddress, (UINT8 *)&PusData, sizeof (PusData));
 }
