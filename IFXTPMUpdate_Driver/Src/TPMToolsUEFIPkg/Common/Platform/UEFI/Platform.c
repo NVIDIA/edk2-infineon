@@ -4,6 +4,7 @@
  *  @file       UEFI\Platform.c
  *
  *  Copyright 2014 - 2022 Infineon Technologies AG ( www.infineon.com )
+ *  SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
  *  1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
@@ -324,7 +325,7 @@ Platform_StringFormat(
     _In_z_                                  const wchar_t*  PwszSource,
     ...)
 {
-    va_list argptr = NULL;
+    va_list argptr;
     unsigned int unReturnValue = RC_E_FAIL;
 
     // Check used parameter (the others will be checked later)
