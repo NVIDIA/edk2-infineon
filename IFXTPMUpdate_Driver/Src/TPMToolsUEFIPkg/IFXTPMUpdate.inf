@@ -143,6 +143,7 @@
 [Packages]
 	CryptoPkg/CryptoPkg.dec
 	MdePkg/MdePkg.dec
+	MdeModulePkg/MdeModulePkg.dec
 	Silicon/NVIDIA/NVIDIA.dec
 
 [LibraryClasses]
@@ -157,6 +158,7 @@
 	UefiBootServicesTableLib
 	UefiDriverEntryPoint
 	UefiLib
+	DisplayUpdateProgressLib
 
 [Protocols]
 	gEfiAdapterInformationProtocolGuid			## PRODUCES

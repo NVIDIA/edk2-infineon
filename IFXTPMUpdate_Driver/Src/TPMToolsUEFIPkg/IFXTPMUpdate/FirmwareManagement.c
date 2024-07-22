@@ -7,6 +7,7 @@
  *  @file       FirmwareManagement.c
  *
  *  Copyright 2014 - 2022 Infineon Technologies AG ( www.infineon.com )
+ *  SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
  *  1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
@@ -23,6 +24,61 @@
 #include "IFXTPMUpdate.h"
 #include "IFXTPMUpdateApp.h"
 #include "TPM_Types.h"
+
+#include <Library/DisplayUpdateProgressLib.h>
+
+/**
+  Function indicate the current completion progress of the firmware
+  update. Platform may override with own specific progress function.
+
+  @param[in]  Completion  A value between 1 and 100 indicating the current
+                          completion progress of the firmware update
+
+  @retval EFI_SUCESS             The capsule update progress was updated.
+  @retval EFI_INVALID_PARAMETER  Completion is greater than 100%.
+
+**/
+EFI_STATUS
+EFIAPI
+UpdateImageProgress (
+  IN UINTN  Completion
+  )
+{
+  EFI_STATUS                           Status;
+  UINTN                                Seconds;
+  EFI_GRAPHICS_OUTPUT_BLT_PIXEL_UNION  *Color;
+
+  DEBUG ((DEBUG_INFO, "Update Progress - %llu%%\n", Completion));
+
+  if (Completion > 100) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  //
+  // Use a default timeout of 5 minutes
+  //
+  Seconds = 5 * 60;
+  Color   = NULL;
+
+  //
+  // Cancel the watchdog timer
+  //
+  gBS->SetWatchdogTimer (0, 0x0000, 0, NULL);
+
+  if (Completion != 100) {
+    //
+    // Arm the watchdog timer from PCD setting
+    //
+    if (Seconds != 0) {
+      DEBUG ((DEBUG_VERBOSE, "Arm watchdog timer %llu seconds\n", Seconds));
+      gBS->SetWatchdogTimer (Seconds, 0x0000, 0, NULL);
+    }
+  }
+
+  Status = DisplayUpdateProgress (Completion, Color);
+
+  return Status;
+}
 
 /// Predefined image version
 CHAR16 gwszVersionName[MAX_NAME];
@@ -552,12 +608,8 @@ IFXTPMUpdate_FirmwareManagement_SetImage(
         }
 #endif
 
-        // Use dummy progress callback if not set correctly (no strict parameter enforcement)
-        if (NULL == PfnProgress)
-        {
-            LOGGING_WRITE_LEVEL1(L"Warning: ProgressCallback not set. Continue without reporting progress.");
-            PfnProgress = &IFXTPMUpdate_FirmwareManagement_ProgressCallback;
-        }
+        // Override external callback to use internal update progress instead
+        PfnProgress = &UpdateImageProgress;
 
         // Only set abort reason if pointer is set (no strict parameter enforcement)
         if (NULL != PppAbortReason)
