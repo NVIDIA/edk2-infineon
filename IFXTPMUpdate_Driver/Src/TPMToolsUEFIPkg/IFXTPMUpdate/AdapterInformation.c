@@ -7,6 +7,7 @@
  *  @file       AdapterInformation.c
  *
  *  Copyright 2014 - 2022 Infineon Technologies AG ( www.infineon.com )
+ *  SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
  *  1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
@@ -401,6 +402,9 @@ IFXTPMUpdate_AdapterInformation_GetInformation(
 
     do
     {
+        const EFI_GUID guidLogging = EFI_IFXTPM_FIRMWARE_UPDATE_DESCRIPTOR_LOGGING_1_GUID;
+        const EFI_GUID guidTpm12 = EFI_IFXTPM_FIRMWARE_UPDATE_DESCRIPTOR_TPM12_1_GUID;
+        const EFI_GUID guidTpm20 = EFI_IFXTPM_FIRMWARE_UPDATE_DESCRIPTOR_TPM20_1_GUID;
         const EFI_GUID guidCounters = EFI_IFXTPM_FIRMWARE_UPDATE_DESCRIPTOR_COUNTERS_1_GUID;
         const EFI_GUID guidOperationMode = EFI_IFXTPM_FIRMWARE_UPDATE_DESCRIPTOR_OPERATION_MODE_1_GUID;
         const EFI_GUID guidFuDetails = EFI_IFXTPM_FIRMWARE_UPDATE_DESCRIPTOR_DETAILS_1_GUID;
@@ -436,10 +440,22 @@ IFXTPMUpdate_AdapterInformation_GetInformation(
         }
         else
         {
-            // GetInformation called with unsupported GUID
-            efiStatus = EFI_UNSUPPORTED;
-            LOGGING_WRITE_LEVEL1_FMT(L"Error during input parameter check in GetInformation: invalid value for PpInformationType. (0x%.16lX)", efiStatus);
-            break;
+            if (CompareGuid(PpInformationType, &guidLogging) ||
+                CompareGuid(PpInformationType, &guidTpm12) ||
+                CompareGuid(PpInformationType, &guidTpm20))
+            {
+                // GetInformation called with supported GUIDs which don't have information to return.
+                efiStatus = EFI_SUCCESS;
+                *PpullInformationBlockSize = 1;
+                *PppInformationBlock = AllocateZeroPool(1);
+            }
+            else
+            {
+                // GetInformation called with unsupported GUID
+                efiStatus = EFI_UNSUPPORTED;
+                LOGGING_WRITE_LEVEL1_FMT(L"Error during input parameter check in GetInformation: invalid value for PpInformationType. (0x%.16lX)", efiStatus);
+                break;
+            }
         }
     }
     WHILE_FALSE_END;
@@ -507,7 +523,9 @@ IFXTPMUpdate_AdapterInformation_SetInformation(
         const EFI_GUID guidLogging = EFI_IFXTPM_FIRMWARE_UPDATE_DESCRIPTOR_LOGGING_1_GUID;
         const EFI_GUID guidTpm12 = EFI_IFXTPM_FIRMWARE_UPDATE_DESCRIPTOR_TPM12_1_GUID;
         const EFI_GUID guidTpm20 = EFI_IFXTPM_FIRMWARE_UPDATE_DESCRIPTOR_TPM20_1_GUID;
-
+        const EFI_GUID guidCounters = EFI_IFXTPM_FIRMWARE_UPDATE_DESCRIPTOR_COUNTERS_1_GUID;
+        const EFI_GUID guidOperationMode = EFI_IFXTPM_FIRMWARE_UPDATE_DESCRIPTOR_OPERATION_MODE_1_GUID;
+        const EFI_GUID guidFuDetails = EFI_IFXTPM_FIRMWARE_UPDATE_DESCRIPTOR_DETAILS_1_GUID;
         // Parameter Check
         if (NULL == PpThis || NULL == PpInformationBlock || NULL == PpInformationType)
         {
@@ -758,10 +776,20 @@ IFXTPMUpdate_AdapterInformation_SetInformation(
         }
         else
         {
-            // SetInformation only supports EFI_IFXTPM_FIRMWARE_UPDATE_DESCRIPTOR_LOGGING_1_GUID and EFI_IFXTPM_FIRMWARE_UPDATE_DESCRIPTOR_TPM20_1_GUID
-            efiStatus = EFI_UNSUPPORTED;
-            LOGGING_WRITE_LEVEL1_FMT(L"Error during input parameter check in SetInformation: invalid value for PpInformationType. (0x%.16lX)", efiStatus);
-            break;
+            if (CompareGuid(PpInformationType, &guidCounters) ||
+                CompareGuid(PpInformationType, &guidOperationMode) ||
+                CompareGuid(PpInformationType, &guidFuDetails))
+            {
+                // SetInformation called with supported GUIDs which don't have information to set.
+                efiStatus = EFI_WRITE_PROTECTED;
+            }
+            else
+            {
+                // SetInformation only supports EFI_IFXTPM_FIRMWARE_UPDATE_DESCRIPTOR_LOGGING_1_GUID and EFI_IFXTPM_FIRMWARE_UPDATE_DESCRIPTOR_TPM20_1_GUID
+                efiStatus = EFI_UNSUPPORTED;
+                LOGGING_WRITE_LEVEL1_FMT(L"Error during input parameter check in SetInformation: invalid value for PpInformationType. (0x%.16lX)", efiStatus);
+                break;
+            }
         }
 
         efiStatus = EFI_SUCCESS;
