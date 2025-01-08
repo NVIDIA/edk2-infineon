@@ -307,6 +307,8 @@ typedef struct {
  *  Driver specific error codes (0xE029000000000001 - 0xE029FFFFFFFFFFFF)
  */
 
+#define EFI_IFXTPM_ERROR_CODE_MASK                      0xE029000000000000
+
 /**
  *  @brief  The firmware image is corrupt.
  */
