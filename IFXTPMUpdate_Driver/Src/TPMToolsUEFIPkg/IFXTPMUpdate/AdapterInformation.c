@@ -533,14 +533,19 @@ IFXTPMUpdate_AdapterInformation_SetInformation(
             LOGGING_WRITE_LEVEL1_FMT(L"Error during input parameter check in SetInformation: at least one mandatory parameter is NULL. (0x%.16lX)", efiStatus);
             break;
         }
-
+        if (PullInformationBlockSize == 0)
+        {
+            efiStatus = EFI_UNSUPPORTED;
+            LOGGING_WRITE_LEVEL1_FMT(L"Error during input parameter check in SetInformation: at least one mandatory parameter is NULL. (0x%.16lX)", efiStatus);
+            break;
+        }
         // Check for logging structure GUID
         if (CompareGuid(PpInformationType, &guidLogging))
         {
             EFI_IFXTPM_FIRMWARE_UPDATE_DESCRIPTOR_LOGGING_1* pDescriptor = NULL;
             if (PullInformationBlockSize != sizeof(EFI_IFXTPM_FIRMWARE_UPDATE_DESCRIPTOR_LOGGING_1))
             {
-                efiStatus = EFI_INVALID_PARAMETER;
+                efiStatus = EFI_WRITE_PROTECTED;
                 LOGGING_WRITE_LEVEL1_FMT(L"Error during input parameter check in SetInformation: invalid value for PullInformationBlockSize. (0x%.16lX)", efiStatus);
                 break;
             }
@@ -558,7 +563,7 @@ IFXTPMUpdate_AdapterInformation_SetInformation(
 
             if (PullInformationBlockSize != sizeof(EFI_IFXTPM_FIRMWARE_UPDATE_DESCRIPTOR_TPM12_1))
             {
-                efiStatus = EFI_INVALID_PARAMETER;
+                efiStatus = EFI_WRITE_PROTECTED;
                 LOGGING_WRITE_LEVEL1_FMT(L"Error during input parameter check in SetInformation: invalid value for PullInformationBlockSize. (0x%.16lX)", efiStatus);
                 break;
             }
@@ -671,7 +676,7 @@ IFXTPMUpdate_AdapterInformation_SetInformation(
 
             if (PullInformationBlockSize != sizeof(EFI_IFXTPM_FIRMWARE_UPDATE_DESCRIPTOR_TPM20_1))
             {
-                efiStatus = EFI_INVALID_PARAMETER;
+                efiStatus = EFI_WRITE_PROTECTED;
                 LOGGING_WRITE_LEVEL1_FMT(L"Error during input parameter check in SetInformation: invalid value for PullInformationBlockSize. (0x%.16lX)", efiStatus);
                 break;
             }
@@ -782,6 +787,7 @@ IFXTPMUpdate_AdapterInformation_SetInformation(
             {
                 // SetInformation called with supported GUIDs which don't have information to set.
                 efiStatus = EFI_WRITE_PROTECTED;
+                break;
             }
             else
             {
@@ -798,6 +804,12 @@ IFXTPMUpdate_AdapterInformation_SetInformation(
 
     UninitializeTpmAccess();
 
+    //
+    // Translate driver specific error code for EFI_ADAPTER_INFORMATION_PROTOCOL compliance
+    //
+    if ((efiStatus & EFI_IFXTPM_ERROR_CODE_MASK) == EFI_IFXTPM_ERROR_CODE_MASK) {
+        efiStatus = EFI_WRITE_PROTECTED;
+    }
     LOGGING_WRITE_LEVEL2_FMT(L"Exiting EFI_ADAPTER_INFORMATION_PROTOCOL.SetInformation(): (0x%.16lX)", efiStatus);
 
     return efiStatus;
